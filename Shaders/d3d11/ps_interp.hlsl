@@ -26,9 +26,8 @@ float2 LoadFlow(int2 px)
 
 float4 main(float4 pos : SV_POSITION, float2 uv : TEXCOORD0) : SV_Target
 {
-	// DIAGNOSTIC 2: sample the current frame with the raw interpolator UV - no
-	// constant-buffer math, no flow. If this still comes out white, the pass is
-	// not drawing or the texture binding is wrong. If it shows the video, the
-	// bug is the constant-buffer math (e.g. gSize == 0 -> division by zero).
-	return texCur.SampleLevel(samp, uv, 0);
+	// DIAGNOSTIC 3: output a flat magenta. No texture, no maths. If the
+	// in-between frame is magenta the pass runs and the render target is fed;
+	// if it is still white, Process() is not taking the interpolation branch.
+	return float4(1.0, 0.0, 1.0, 1.0);
 }
