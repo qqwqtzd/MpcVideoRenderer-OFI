@@ -26,8 +26,8 @@ float2 LoadFlow(int2 px)
 
 float4 main(float4 pos : SV_POSITION, float2 uv : TEXCOORD0) : SV_Target
 {
-	// DIAGNOSTIC 4: visualise the interpolator's UV. A smooth red/green
-	// gradient means the quad and input layout are fine; a flat colour means
-	// the UV is broken.
-	return float4(uv.x, uv.y, 0.0, 1.0);
+	// DIAGNOSTIC 5: read the current frame at the exact pixel from
+	// SV_POSITION with Load() - no uv, no sampler, no constant buffer - and
+	// force alpha to 1.
+	return float4(texCur.Load(int3(int2(pos.xy), 0)).rgb, 1.0);
 }
