@@ -26,8 +26,8 @@ float2 LoadFlow(int2 px)
 
 float4 main(float4 pos : SV_POSITION, float2 uv : TEXCOORD0) : SV_Target
 {
-	// DIAGNOSTIC 3: output a flat magenta. No texture, no maths. If the
-	// in-between frame is magenta the pass runs and the render target is fed;
-	// if it is still white, Process() is not taking the interpolation branch.
-	return float4(1.0, 0.0, 1.0, 1.0);
+	// DIAGNOSTIC 4: visualise the interpolator's UV. A smooth red/green
+	// gradient means the quad and input layout are fine; a flat colour means
+	// the UV is broken.
+	return float4(uv.x, uv.y, 0.0, 1.0);
 }
