@@ -28,7 +28,11 @@ float4 main(float4 pos : SV_POSITION, float2 uv : TEXCOORD0) : SV_Target
 {
 	float2 invSize = 1.0 / float2(gSize);
 	float2 uvPixel = uv * float2(gSize);
-	float2 flow = LoadFlow(int2(uvPixel));
+	// DIAGNOSTIC BUILD: force zero flow to separate the warp from the sampling.
+	// If the frame is still white with this, the bug is in the pass itself, not
+	// in the optical flow.
+	float2 flow = float2(0, 0);
+	//float2 flow = LoadFlow(int2(uvPixel));
 
 	// The OFA forward flow is the displacement from the input frame (previous)
 	// to the reference frame (current). To reconstruct the in-between time we
