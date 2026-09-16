@@ -55,7 +55,7 @@
       <Command>..\update_revision.cmd</Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\external\nvof\Interface;$(ProjectDir)..\external\nvof\Base</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
@@ -72,6 +72,16 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="DX11Helper.cpp" />
     <ClCompile Include="DX11VideoProcessor.cpp" />
+    <ClCompile Include="FrameInterpolator.cpp" />
+    <ClCompile Include="..\external\nvof\Base\NvOF.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\external\nvof\Base\NvOFD3D11.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\external\nvof\Base\NvOFD3DCommon.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="DX9Helper.cpp" />
     <ClCompile Include="DX9VideoProcessor.cpp" />
     <ClCompile Include="DXVA2VP.cpp" />
@@ -101,6 +111,7 @@
     <ClInclude Include="csputils.h" />
     <ClInclude Include="CustomAllocator.h" />
     <ClInclude Include="D3D11VP.h" />
+    <ClInclude Include="FrameInterpolator.h" />
     <ClInclude Include="D3DUtil\D3D11Font.h" />
     <ClInclude Include="D3DUtil\D3D11Geometry.h" />
     <ClInclude Include="D3DUtil\D3D9Font.h" />

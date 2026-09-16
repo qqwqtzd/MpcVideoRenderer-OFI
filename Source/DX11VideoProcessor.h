@@ -39,6 +39,8 @@
 
 class CVideoRendererInputPin;
 
+#include "FrameInterpolator.h"
+
 class CDX11VideoProcessor
 	: public CVideoProcessor
 {
@@ -69,6 +71,11 @@ private:
 
 	Tex11Video_t m_TexSrcVideo; // for copy of frame
 	Tex2D_t m_TexConvertOutput;
+	Tex2D_t m_TexPrevConverted; // previous frame in internal format (interpolation)
+	Tex2D_t m_TexInterp;        // generated in-between frame
+	bool m_bHasPrevInterp = false;
+	bool m_bShowInterp = false;
+	CFrameInterpolator m_FrameInterpolator;
 	Tex2D_t m_TexResize;        // for intermediate result of two-pass resize
 	CTex2DRing m_TexsPostScale;
 	Tex2D_t m_TexDither;

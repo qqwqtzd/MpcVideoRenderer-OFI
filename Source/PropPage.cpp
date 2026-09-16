@@ -124,6 +124,9 @@ void CVRMainPPage::SetControls()
 	CheckDlgButton(IDC_CHECK13, m_SetsPP.bAdjustPresentTime   ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(IDC_CHECK16, m_SetsPP.bReinitByDisplay     ? BST_CHECKED : BST_UNCHECKED);
 
+	CheckDlgButton(IDC_CHECK20, m_SetsPP.bFrameInterp         ? BST_CHECKED : BST_UNCHECKED);
+	SendDlgItemMessageW(IDC_COMBO11, CB_SETCURSEL, discard<int>(m_SetsPP.iFrameInterpMultiplier, 2, 2, 6) - 2, 0);
+
 	SendDlgItemMessageW(IDC_COMBO6, CB_SETCURSEL, m_SetsPP.iResizeStats, 0);
 
 	SendDlgItemMessageW(IDC_COMBO5, CB_SETCURSEL, m_SetsPP.iChromaScaling, 0);
@@ -275,6 +278,12 @@ HRESULT CVRMainPPage::OnActivate()
 
 	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Discard");
 	SendDlgItemMessageW(IDC_COMBO4, CB_ADDSTRING, 0, (LPARAM)L"Flip");
+
+	SendDlgItemMessageW(IDC_COMBO11, CB_ADDSTRING, 0, (LPARAM)L"2x");
+	SendDlgItemMessageW(IDC_COMBO11, CB_ADDSTRING, 0, (LPARAM)L"3x");
+	SendDlgItemMessageW(IDC_COMBO11, CB_ADDSTRING, 0, (LPARAM)L"4x");
+	SendDlgItemMessageW(IDC_COMBO11, CB_ADDSTRING, 0, (LPARAM)L"5x");
+	SendDlgItemMessageW(IDC_COMBO11, CB_ADDSTRING, 0, (LPARAM)L"6x");
 
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETRANGE, 0, MAKELONG(0, 2));
 	SendDlgItemMessageW(IDC_SLIDER1, TBM_SETTIC, 0, 1);
@@ -431,6 +440,11 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				SetDirty();
 				return (LRESULT)1;
 			}
+			if (nID == IDC_CHECK20) {
+				m_SetsPP.bFrameInterp = IsDlgButtonChecked(IDC_CHECK20) == BST_CHECKED;
+				SetDirty();
+				return (LRESULT)1;
+			}
 
 			if (nID == IDC_BUTTON1) {
 				m_SetsPP.SetDefault();
@@ -466,6 +480,17 @@ INT_PTR CVRMainPPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 				if (lValue != m_SetsPP.iVPDeinterlacing) {
 					m_SetsPP.iVPDeinterlacing = lValue;
 					SetDirty();
+				}
+				return (LRESULT)1;
+			}
+			if (nID == IDC_COMBO11) {
+				lValue = SendDlgItemMessageW(IDC_COMBO11, CB_GETCURSEL, 0, 0);
+				if (lValue >= 0) {
+					const int mult = discard<int>(static_cast<int>(lValue) + 2, 2, 2, 6);
+					if (mult != m_SetsPP.iFrameInterpMultiplier) {
+						m_SetsPP.iFrameInterpMultiplier = mult;
+						SetDirty();
+					}
 				}
 				return (LRESULT)1;
 			}

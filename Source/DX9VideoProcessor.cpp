@@ -290,6 +290,8 @@ CDX9VideoProcessor::CDX9VideoProcessor(CMpcVideoRenderer* pFilter, const Setting
 	m_iHdrToggleDisplay    = HDRTD_Disabled;
 	m_bConvertToSdr        = config.bConvertToSdr;
 	m_iSDRDisplayNits      = config.iSDRDisplayNits;
+	m_bFrameInterp         = config.bFrameInterp;
+	m_iFrameInterpMultiplier = config.iFrameInterpMultiplier;
 
 	m_nCurrentAdapter = D3DADAPTER_DEFAULT;
 
@@ -1920,6 +1922,8 @@ void CDX9VideoProcessor::Configure(const Settings_t& config)
 	m_bAdjustPresentTime   = config.bAdjustPresentTime;
 	m_bDeintBlend          = config.bDeintBlend;
 	m_iSDRDisplayNits      = config.iSDRDisplayNits;
+	m_bFrameInterp         = config.bFrameInterp;
+	m_iFrameInterpMultiplier = config.iFrameInterpMultiplier;
 
 	// checking what needs to be changed
 

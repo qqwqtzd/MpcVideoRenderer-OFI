@@ -71,6 +71,8 @@ protected:
 	int  m_iHdrOsdBrightness               = 0;
 	bool m_bConvertToSdr                   = true;
 	int  m_iSDRDisplayNits                 = SDR_NITS_DEF;
+	bool m_bFrameInterp                    = false;
+	int  m_iFrameInterpMultiplier          = 2;
 
 	bool m_bVPScalingUseShaders = false;
 

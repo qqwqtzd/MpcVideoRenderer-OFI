@@ -132,6 +132,8 @@ struct Settings_t {
 	bool bHdrLocalToneMapping;
 	int  iHdrLocalToneMappingType;
 	int iHdrDisplayMaxNits;
+	bool bFrameInterp;
+	int  iFrameInterpMultiplier;
 
 	Settings_t() {
 		SetDefault();
@@ -182,6 +184,8 @@ struct Settings_t {
 		bConvertToSdr                   = true;
 		iHdrOsdBrightness               = 0;
 		iSDRDisplayNits                 = SDR_NITS_DEF;
+		bFrameInterp                    = false;
+		iFrameInterpMultiplier          = 2;
 	}
 };
 

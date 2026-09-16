@@ -409,6 +409,8 @@ CDX11VideoProcessor::CDX11VideoProcessor(CMpcVideoRenderer* pFilter, const Setti
 	m_iHdrOsdBrightness    = config.iHdrOsdBrightness;
 	m_bConvertToSdr        = config.bConvertToSdr;
 	m_iSDRDisplayNits      = config.iSDRDisplayNits;
+	m_bFrameInterp         = config.bFrameInterp;
+	m_iFrameInterpMultiplier = config.iFrameInterpMultiplier;
 
 	m_nCurrentAdapter = -1;
 
@@ -663,8 +665,13 @@ void CDX11VideoProcessor::ReleaseVP()
 
 	m_TexSrcVideo.Release();
 	m_TexConvertOutput.Release();
+	m_TexPrevConverted.Release();
+	m_TexInterp.Release();
 	m_TexResize.Release();
 	m_TexsPostScale.Release();
+	m_FrameInterpolator.ReleaseSize();
+	m_bHasPrevInterp = false;
+	m_bShowInterp = false;
 
 	m_PSConvColorData.Release();
 	m_pDoviCurvesConstantBuffer.Release();
@@ -2174,7 +2181,38 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 #endif
 	m_Syncs.Add(so);
 
-	if (m_bDoubleFrames) {
+	const bool bInterpActive = m_bFrameInterp && m_FrameInterpolator.IsReady()
+		&& m_TexInterp.pTexture && m_TexPrevConverted.pTexture;
+
+	if (bInterpActive) {
+		if (m_bHasPrevInterp) {
+			const bool bGenerated = SUCCEEDED(m_FrameInterpolator.Interpolate(
+				m_TexPrevConverted.pTexture, m_TexConvertOutput.pTexture, m_TexInterp.pTexture));
+			// the freshly rendered frame becomes the next "previous"
+			m_pDeviceContext->CopyResource(m_TexPrevConverted.pTexture, m_TexConvertOutput.pTexture);
+
+			if (bGenerated && rtEnd >= rtClock) {
+				rtStart += rtFrameDur / 2;
+				m_bShowInterp = true;
+				hr = Render(2, rtStart);
+				m_bShowInterp = false;
+				m_pFilter->m_DrawStats.Add(GetPreciseTick());
+				if (m_pFilter->m_filterState == State_Running) {
+					m_pFilter->StreamTime(rtClock);
+				}
+				m_RenderStats.syncoffset = rtClock - rtStart;
+				so = (int)std::clamp(m_RenderStats.syncoffset, -UNITS, UNITS);
+#if SYNC_OFFSET_EX
+				m_SyncDevs.Add(so - m_Syncs.Last());
+#endif
+				m_Syncs.Add(so);
+			}
+		} else {
+			m_pDeviceContext->CopyResource(m_TexPrevConverted.pTexture, m_TexConvertOutput.pTexture);
+			m_bHasPrevInterp = true;
+		}
+	}
+	else if (m_bDoubleFrames) {
 		if (rtEnd < rtClock) {
 			m_RenderStats.dropped2++;
 			return S_FALSE; // skip frame
@@ -2899,6 +2937,17 @@ void CDX11VideoProcessor::UpdateTexures()
 	else {
 		hr = m_TexConvertOutput.CheckCreate(m_pDevice, m_InternalTexFmt, m_srcRectWidth, m_srcRectHeight, Tex2D_DefaultShaderRTarget);
 	}
+
+	if (m_bFrameInterp && m_TexConvertOutput.pTexture) {
+		if (SUCCEEDED(m_FrameInterpolator.Init(m_pDevice, m_pDeviceContext))) {
+			m_FrameInterpolator.Configure(m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height);
+		}
+		m_TexPrevConverted.CheckCreate(m_pDevice, m_TexConvertOutput.desc.Format,
+			m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height, Tex2D_DefaultShaderRTarget);
+		m_TexInterp.CheckCreate(m_pDevice, m_TexConvertOutput.desc.Format,
+			m_TexConvertOutput.desc.Width, m_TexConvertOutput.desc.Height, Tex2D_DefaultShaderRTarget);
+		m_bHasPrevInterp = false;
+	}
 }
 
 void CDX11VideoProcessor::UpdatePostScaleTexures()
@@ -3303,13 +3352,18 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 
 	const UINT numSteps = GetPostScaleSteps();
 
-	if (m_D3D11VP.IsReady()) {
+	if (m_bShowInterp && m_TexInterp.pTexture) {
+		pInputTexture = &m_TexInterp;
+		rSrc.SetRect(0, 0, m_TexInterp.desc.Width, m_TexInterp.desc.Height);
+		rotation = 0;
+	}
+	else if (m_D3D11VP.IsReady()) {
 		if (!(m_iSwapEffect == SWAPEFFECT_Discard && (m_VendorId == PCIV_AMDATI || m_VendorId == PCIV_INTEL))) {
 			const bool bNeedShaderTransform =
 				(m_TexConvertOutput.desc.Width != dstRect.Width() || m_TexConvertOutput.desc.Height != dstRect.Height() || m_bFlip
 				|| dstRect.right > m_windowRect.right || dstRect.bottom > m_windowRect.bottom)
 				|| (m_bHdrPassthroughSupport && (m_bHdrPassthrough || m_bHdrLocalToneMapping)); // At least on Nvidia we can sometimes get the "D3D11: Removing Device" error here when HDR Passthrough.
-			if (!bNeedShaderTransform && !numSteps) {
+			if (!bNeedShaderTransform && !numSteps && !m_bFrameInterp) {
 				m_bVPScalingUseShaders = false;
 				hr = D3D11VPPass(pRenderTarget, rSrc, dstRect, second);
 
@@ -3831,6 +3885,8 @@ void CDX11VideoProcessor::Configure(const Settings_t& config)
 	m_bVBlankBeforePresent = config.bVBlankBeforePresent;
 	m_bAdjustPresentTime   = config.bAdjustPresentTime;
 	m_bDeintBlend          = config.bDeintBlend;
+	m_bFrameInterp         = config.bFrameInterp;
+	m_iFrameInterpMultiplier = config.iFrameInterpMultiplier;
 
 	// checking what needs to be changed
 

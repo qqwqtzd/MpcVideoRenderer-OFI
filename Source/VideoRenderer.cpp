@@ -68,6 +68,8 @@
 #define OPT_ConvertToSdr                   L"ConvertToSdr"
 #define OPT_UseD3DFullscreen               L"UseD3DFullscreen"
 #define OPT_DisplayNits                    L"DisplayNits"
+#define OPT_FrameInterp                    L"FrameInterpolation"
+#define OPT_FrameInterpMultiplier          L"FrameInterpolationMultiplier"
 
 static std::atomic_int g_nInstance = 0;
 static const wchar_t g_szClassName[] = L"VRWindow";
@@ -184,6 +186,12 @@ CMpcVideoRenderer::CMpcVideoRenderer(LPUNKNOWN pUnk, HRESULT* phr)
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ShowStatistics, dw)) {
 			m_Sets.bShowStats = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_FrameInterp, dw)) {
+			m_Sets.bFrameInterp = !!dw;
+		}
+		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_FrameInterpMultiplier, dw)) {
+			m_Sets.iFrameInterpMultiplier = discard<int>(dw, 2, 2, 6);
 		}
 		if (ERROR_SUCCESS == key.QueryDWORDValue(OPT_ResizeStatistics, dw)) {
 			m_Sets.iResizeStats = discard<int>(dw, 0, 0, 1);
@@ -1330,6 +1338,8 @@ STDMETHODIMP CMpcVideoRenderer::SaveSettings()
 		key.SetDWORDValue(OPT_HdrOsdBrightness,    m_Sets.iHdrOsdBrightness);
 		key.SetDWORDValue(OPT_ConvertToSdr,        m_Sets.bConvertToSdr);
 		key.SetDWORDValue(OPT_DisplayNits,         m_Sets.iSDRDisplayNits);
+		key.SetDWORDValue(OPT_FrameInterp,         m_Sets.bFrameInterp);
+		key.SetDWORDValue(OPT_FrameInterpMultiplier, m_Sets.iFrameInterpMultiplier);
 	}
 
 	return S_OK;

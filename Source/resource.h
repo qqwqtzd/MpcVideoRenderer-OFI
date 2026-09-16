@@ -86,6 +86,8 @@
 #define IDF_PS_11_FINAL_PASS            880
 #define IDF_PS_11_FINAL_PASS_10         881
 #define IDF_PS_11_HDR10_TONEMAP         882
+#define IDF_PS_11_LUMA                  890
+#define IDF_PS_11_INTERP                891
 #define IDF_PS_11_TEST                  900
 #define IDC_EDIT1                       1001
 #define IDC_EDIT2                       1002
@@ -132,6 +134,8 @@
 #define IDC_COMBO10                     1063
 #define IDC_STATIC99                    1064
 #define IDC_STATIC100                   1065
+#define IDC_CHECK20                     1040
+#define IDC_COMBO11                     1066
 
 // Next default values for new objects
 // 
