@@ -26,23 +26,9 @@ float2 LoadFlow(int2 px)
 
 float4 main(float4 pos : SV_POSITION, float2 uv : TEXCOORD0) : SV_Target
 {
-	float2 invSize = 1.0 / float2(gSize);
-	float2 uvPixel = uv * float2(gSize);
-	// DIAGNOSTIC BUILD: force zero flow to separate the warp from the sampling.
-	// If the frame is still white with this, the bug is in the pass itself, not
-	// in the optical flow.
-	float2 flow = float2(0, 0);
-	//float2 flow = LoadFlow(int2(uvPixel));
-
-	// The OFA forward flow is the displacement from the input frame (previous)
-	// to the reference frame (current). To reconstruct the in-between time we
-	// sample the previous frame against the flow by alpha, and the current
-	// frame along the flow by (1 - alpha).
-	float2 uvPrev = (uvPixel - flow * gAlpha) * invSize;
-	float2 uvCur = (uvPixel + flow * (1.0 - gAlpha)) * invSize;
-
-	float3 a = texPrev.SampleLevel(samp, uvPrev, 0).rgb;
-	float3 b = texCur.SampleLevel(samp, uvCur, 0).rgb;
-
-	return float4(lerp(a, b, gAlpha), 1.0);
+	// DIAGNOSTIC 2: sample the current frame with the raw interpolator UV - no
+	// constant-buffer math, no flow. If this still comes out white, the pass is
+	// not drawing or the texture binding is wrong. If it shows the video, the
+	// bug is the constant-buffer math (e.g. gSize == 0 -> division by zero).
+	return texCur.SampleLevel(samp, uv, 0);
 }
