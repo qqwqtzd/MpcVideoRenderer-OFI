@@ -137,8 +137,15 @@ static void InterpLog(const char* fmt, ...)
 	if (s_count > 400) {
 		return;
 	}
+	char dir[MAX_PATH] = {};
+	if (GetTempPathA(MAX_PATH, dir) == 0) {
+		return;
+	}
+	char path[MAX_PATH] = {};
+	strcpy_s(path, dir);
+	strcat_s(path, "MpcVrInterp.log");
 	FILE* f = nullptr;
-	fopen_s(&f, "C:\\MpcVrInterp.log", s_count == 0 ? "w" : "a");
+	fopen_s(&f, path, s_count == 0 ? "w" : "a");
 	if (!f) {
 		return;
 	}
