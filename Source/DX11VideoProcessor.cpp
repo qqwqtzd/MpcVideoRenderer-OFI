@@ -128,6 +128,32 @@ struct PS_EXTSHADER_CONSTANTS {
 
 static_assert(sizeof(PS_EXTSHADER_CONSTANTS) % 16 == 0);
 
+#include <cstdarg>
+
+// TEMP diagnostics for the optical-flow interpolation work.
+static void InterpLog(const char* fmt, ...)
+{
+	static int s_count = 0;
+	if (s_count > 400) {
+		return;
+	}
+	FILE* f = nullptr;
+	fopen_s(&f, "C:\\MpcVrInterp.log", s_count == 0 ? "w" : "a");
+	if (!f) {
+		return;
+	}
+	if (s_count == 0) {
+		fprintf(f, "=== MpcVr interp log ===\n");
+	}
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf(f, fmt, ap);
+	va_end(ap);
+	fprintf(f, "\n");
+	fclose(f);
+	s_count++;
+}
+
 static void FillVertices(VERTEX (&Vertices)[4], const UINT srcW, const UINT srcH, const RECT& srcRect,
 	const int iRotation, const bool bFlip)
 {
@@ -2181,6 +2207,14 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 #endif
 	m_Syncs.Add(so);
 
+	InterpLog("PS: interp=%d ready=%d texInterp=%d texPrev=%d hasPrev=%d fmt=%u %ux%u",
+		m_bFrameInterp ? 1 : 0, m_FrameInterpolator.IsReady() ? 1 : 0,
+		m_TexInterp.pTexture ? 1 : 0, m_TexPrevConverted.pTexture ? 1 : 0,
+		m_bHasPrevInterp ? 1 : 0,
+		m_TexConvertOutput.pTexture ? (unsigned)m_TexConvertOutput.desc.Format : 0u,
+		m_TexConvertOutput.pTexture ? m_TexConvertOutput.desc.Width : 0u,
+		m_TexConvertOutput.pTexture ? m_TexConvertOutput.desc.Height : 0u);
+
 	const bool bInterpActive = m_bFrameInterp && m_FrameInterpolator.IsReady()
 		&& m_TexInterp.pTexture && m_TexPrevConverted.pTexture;
 
@@ -3385,6 +3419,14 @@ HRESULT CDX11VideoProcessor::Process(ID3D11Texture2D* pRenderTarget, const CRect
 	else {
 		pInputTexture = &m_TexSrcVideo;
 	}
+
+	InterpLog("Process: vp=%d interp=%d show=%d second=%d steps=%u src=%d fmt=%u %ux%u video=%dx%d",
+		m_D3D11VP.IsReady() ? 1 : 0, m_bFrameInterp ? 1 : 0, m_bShowInterp ? 1 : 0,
+		second ? 1 : 0, numSteps,
+		(pInputTexture == &m_TexConvertOutput) ? 1 : (pInputTexture == &m_TexInterp ? 2 : (pInputTexture == &m_TexSrcVideo ? 3 : 0)),
+		pInputTexture ? (unsigned)pInputTexture->desc.Format : 0u,
+		pInputTexture ? pInputTexture->desc.Width : 0u, pInputTexture ? pInputTexture->desc.Height : 0u,
+		m_videoRect.Width(), m_videoRect.Height());
 
 	if (numSteps) {
 		UINT step = 0;
