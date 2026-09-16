@@ -30,10 +30,12 @@ float4 main(float4 pos : SV_POSITION, float2 uv : TEXCOORD0) : SV_Target
 	float2 uvPixel = uv * float2(gSize);
 	float2 flow = LoadFlow(int2(uvPixel));
 
-	// Forward-project the previous frame and backward-project the current one
-	// into the in-between time, then cross-fade.
-	float2 uvPrev = (uvPixel + flow * gAlpha) * invSize;
-	float2 uvCur = (uvPixel - flow * (1.0 - gAlpha)) * invSize;
+	// The OFA forward flow is the displacement from the input frame (previous)
+	// to the reference frame (current). To reconstruct the in-between time we
+	// sample the previous frame against the flow by alpha, and the current
+	// frame along the flow by (1 - alpha).
+	float2 uvPrev = (uvPixel - flow * gAlpha) * invSize;
+	float2 uvCur = (uvPixel + flow * (1.0 - gAlpha)) * invSize;
 
 	float3 a = texPrev.SampleLevel(samp, uvPrev, 0).rgb;
 	float3 b = texCur.SampleLevel(samp, uvCur, 0).rgb;
