@@ -302,6 +302,13 @@ HRESULT CFrameInterpolator::Interpolate(ID3D11Texture2D* pPrev, ID3D11Texture2D*
 		return E_FAIL;
 	}
 
+	// TEMP diagnostic: bypass the OFA and the blend pass entirely and just copy
+	// the current frame into the output. If the in-between frame then matches
+	// the video, the content and the display path are fine and the bug is in
+	// the blend draw; if it is still white, it is these textures.
+	m_pContext->CopyResource(pDst, pCur);
+	return S_OK;
+
 	HRESULT hr = ExtractLuma(pPrev, 0);
 	if (FAILED(hr))
 	{
