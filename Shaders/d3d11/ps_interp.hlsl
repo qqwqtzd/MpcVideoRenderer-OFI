@@ -26,18 +26,8 @@ float2 LoadFlow(int2 px)
 
 float4 main(float4 pos : SV_POSITION, float2 uv : TEXCOORD0) : SV_Target
 {
-	float2 size = float2(max(gSize.x, 1u), max(gSize.y, 1u));
-	float2 invSize = 1.0 / size;
-	float2 uvPixel = uv * size;
-
-	// The previous frame is sampled against the flow, the current frame along
-	// it (the OFA forward flow goes from the previous to the current frame).
-	float2 flow = LoadFlow(int2(uvPixel));
-	float2 uvPrev = saturate((uvPixel - flow * gAlpha) * invSize);
-	float2 uvCur = saturate((uvPixel + flow * (1.0 - gAlpha)) * invSize);
-
-	float3 a = texPrev.SampleLevel(samp, uvPrev, 0).rgb;
-	float3 b = texCur.SampleLevel(samp, uvCur, 0).rgb;
-
-	return float4(lerp(a, b, gAlpha), 1.0);
+	// DIAGNOSTIC 6: blend the two input frames with a hard-coded 0.5, using
+	// nothing but the two SRVs - no flow, no gSize, no constant buffer.
+	return float4(lerp(texPrev.SampleLevel(samp, uv, 0).rgb,
+	                   texCur.SampleLevel(samp, uv, 0).rgb, 0.5), 1.0);
 }
