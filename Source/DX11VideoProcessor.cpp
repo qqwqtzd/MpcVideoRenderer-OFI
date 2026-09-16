@@ -2228,7 +2228,7 @@ HRESULT CDX11VideoProcessor::ProcessSample(IMediaSample* pSample)
 	if (bInterpActive) {
 		if (m_bHasPrevInterp) {
 			const bool bGenerated = SUCCEEDED(m_FrameInterpolator.Interpolate(
-				m_TexPrevConverted.pTexture, m_TexConvertOutput.pTexture, m_TexInterp.pTexture));
+				m_TexPrevConverted.pShaderResource, m_TexConvertOutput.pShaderResource, m_TexInterp.pTexture));
 			// the freshly rendered frame becomes the next "previous"
 			m_pDeviceContext->CopyResource(m_TexPrevConverted.pTexture, m_TexConvertOutput.pTexture);
 

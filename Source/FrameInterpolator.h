@@ -44,7 +44,8 @@ public:
 	// pPrev / pCur are SRV-bindable frames in the renderer's internal RGB
 	// format; pDst is a render-target frame of the same format and size.
 	// All three belong to the renderer's D3D11 device.
-	HRESULT Interpolate(ID3D11Texture2D* pPrev, ID3D11Texture2D* pCur,
+	HRESULT Interpolate(ID3D11ShaderResourceView* pPrevSrv,
+	                    ID3D11ShaderResourceView* pCurSrv,
 	                    ID3D11Texture2D* pDst);
 
 private:
@@ -54,7 +55,7 @@ private:
 	void DestroyLumaResources();
 
 	// Runs the RGB->luma shader for one source into m_pLumaRT[slot].
-	HRESULT ExtractLuma(ID3D11Texture2D* pSrc, int slot);
+	HRESULT ExtractLuma(ID3D11ShaderResourceView* pSrv, int slot);
 
 	CComPtr<ID3D11Device>        m_pDevice;
 	CComPtr<ID3D11DeviceContext> m_pContext;

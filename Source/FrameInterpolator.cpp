@@ -257,13 +257,11 @@ HRESULT CFrameInterpolator::CreateLumaResources()
 	return S_OK;
 }
 
-HRESULT CFrameInterpolator::ExtractLuma(ID3D11Texture2D* pSrc, int slot)
+HRESULT CFrameInterpolator::ExtractLuma(ID3D11ShaderResourceView* pSrv, int slot)
 {
-	CComPtr<ID3D11ShaderResourceView> srv;
-	HRESULT hr = m_pDevice->CreateShaderResourceView(pSrc, nullptr, &srv);
-	if (FAILED(hr))
+	if (!pSrv)
 	{
-		return hr;
+		return E_POINTER;
 	}
 
 	ID3D11RenderTargetView* rtv = m_pLumaRTV[slot];
@@ -280,7 +278,7 @@ HRESULT CFrameInterpolator::ExtractLuma(ID3D11Texture2D* pSrc, int slot)
 	m_pContext->VSSetShader(m_pVS, nullptr, 0);
 	m_pContext->PSSetShader(m_pPSLuma, nullptr, 0);
 
-	ID3D11ShaderResourceView* srvs[1] = { srv.p };
+	ID3D11ShaderResourceView* srvs[1] = { pSrv };
 	m_pContext->PSSetShaderResources(0, 1, srvs);
 	ID3D11SamplerState* samp = m_pSampler;
 	m_pContext->PSSetSamplers(0, 1, &samp);
@@ -295,26 +293,19 @@ HRESULT CFrameInterpolator::ExtractLuma(ID3D11Texture2D* pSrc, int slot)
 	return S_OK;
 }
 
-HRESULT CFrameInterpolator::Interpolate(ID3D11Texture2D* pPrev, ID3D11Texture2D* pCur, ID3D11Texture2D* pDst)
+HRESULT CFrameInterpolator::Interpolate(ID3D11ShaderResourceView* pPrevSrv, ID3D11ShaderResourceView* pCurSrv, ID3D11Texture2D* pDst)
 {
-	if (!m_bReady || !pPrev || !pCur || !pDst)
+	if (!m_bReady || !pPrevSrv || !pCurSrv || !pDst)
 	{
 		return E_FAIL;
 	}
 
-	// TEMP diagnostic: bypass the OFA and the blend pass entirely and just copy
-	// the current frame into the output. If the in-between frame then matches
-	// the video, the content and the display path are fine and the bug is in
-	// the blend draw; if it is still white, it is these textures.
-	m_pContext->CopyResource(pDst, pCur);
-	return S_OK;
-
-	HRESULT hr = ExtractLuma(pPrev, 0);
+	HRESULT hr = ExtractLuma(pPrevSrv, 0);
 	if (FAILED(hr))
 	{
 		return hr;
 	}
-	hr = ExtractLuma(pCur, 1);
+	hr = ExtractLuma(pCurSrv, 1);
 	if (FAILED(hr))
 	{
 		return hr;
@@ -349,11 +340,7 @@ HRESULT CFrameInterpolator::Interpolate(ID3D11Texture2D* pPrev, ID3D11Texture2D*
 	m_pContext->Unmap(m_pInterpConstants, 0);
 
 	CComPtr<ID3D11RenderTargetView> rtv;
-	CComPtr<ID3D11ShaderResourceView> prevSrv;
-	CComPtr<ID3D11ShaderResourceView> curSrv;
-	if (FAILED(m_pDevice->CreateRenderTargetView(pDst, nullptr, &rtv)) ||
-		FAILED(m_pDevice->CreateShaderResourceView(pPrev, nullptr, &prevSrv)) ||
-		FAILED(m_pDevice->CreateShaderResourceView(pCur, nullptr, &curSrv)))
+	if (FAILED(m_pDevice->CreateRenderTargetView(pDst, nullptr, &rtv)))
 	{
 		return E_FAIL;
 	}
@@ -372,7 +359,7 @@ HRESULT CFrameInterpolator::Interpolate(ID3D11Texture2D* pPrev, ID3D11Texture2D*
 	m_pContext->VSSetShader(m_pVS, nullptr, 0);
 	m_pContext->PSSetShader(m_pPSInterp, nullptr, 0);
 
-	ID3D11ShaderResourceView* srvs[3] = { prevSrv.p, curSrv.p, m_pFlowSRV.p };
+	ID3D11ShaderResourceView* srvs[3] = { pPrevSrv, pCurSrv, m_pFlowSRV.p };
 	m_pContext->PSSetShaderResources(0, 3, srvs);
 	ID3D11SamplerState* samp = m_pSampler;
 	m_pContext->PSSetSamplers(0, 1, &samp);
